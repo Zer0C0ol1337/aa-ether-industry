@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.2] - 2026-10-05
+
+### Behoben
+- Migration `0001_initial` fehlte im Repo bzw. Paket, dadurch wurden keine Tabellen angelegt
+
+## [0.1.1] - 2026-10-05
+
+### Hinzugefügt
+- Migration `0001_initial` wird mitgeliefert (nötig für Docker, dort darf nicht im Container migriert werden)
+- Installationsanleitung für Alliance Auth unter Docker
+
 ## [0.1.0] - 2026-10-05
 
 ### Hinzugefügt

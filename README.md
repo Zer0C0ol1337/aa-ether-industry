@@ -1,21 +1,28 @@
 # aa-ether-industry
 
-**Version 0.1.0** – Industrie- und Trading-Tools für Alliance Auth, gebaut für Ether Element [3THEL].
+**Version 0.1.2** – Industrie- und Trading-Tools für Alliance Auth, gebaut für Ether Element [3THEL].
 
-## Funktionen (0.1.0)
+## Funktionen
 
 - Import aller Blueprints und Rezepte aus der offiziellen CCP-SDE
-- Tägliche Preise aus Jita 4-4 (Sell/Buy) und CCP-Adjusted-Preise
+- Preise aus Jita 4-4 (Sell/Buy) und CCP-Adjusted-Preise, automatisch per Celery
 - Industrie-Rechner für Herstellung und Reactions: Materialbedarf mit ME und Struktur-Bonus, Jobkosten, Produktwert, Gewinn und Marge
 
-## Installation
+## Installation unter Docker (offizielles Alliance-Auth-Docker-Setup)
 
-```bash
-# im venv der Auth-Installation
-pip install -e /pfad/zu/aa-ether-industry
+Alle Befehle im Ordner der Auth-Installation auf dem Server, dort wo `docker-compose.yml` und der Ordner `conf/` liegen.
+
+### 1. Plugin eintragen
+
+In `conf/requirements.txt` eine Zeile ergänzen:
+
+```
+aa-ether-industry @ git+https://github.com/Zer0C0ol1337/aa-ether-industry.git@v0.1.2
 ```
 
-In `local.py`:
+### 2. Konfiguration
+
+Am Ende von `conf/local.py`:
 
 ```python
 INSTALLED_APPS += ["ether_industry"]
@@ -31,18 +38,40 @@ CELERYBEAT_SCHEDULE["ether_industry_update_prices"] = {
 }
 ```
 
-Danach:
+### 3. Image neu bauen und starten
 
 ```bash
-python manage.py makemigrations ether_industry   # nur beim ersten Mal, Migration ins Repo committen
-python manage.py migrate
-python manage.py collectstatic --noinput
-python manage.py ether_industry_import_sde       # nach jedem größeren EVE-Patch wiederholen
-python manage.py shell -c "from ether_industry.tasks import update_all_prices; update_all_prices()"
+docker compose build
+docker compose --env-file=.env up -d
 ```
 
-Zum Schluss Auth und Celery neu starten und der passenden Gruppe/State das Recht
+### 4. Datenbank, Static Files, Daten laden
+
+```bash
+docker compose exec allianceauth_gunicorn bash
+# jetzt im Container:
+auth migrate
+auth collectstatic --noinput
+auth ether_industry_import_sde
+auth shell -c "from ether_industry.tasks import update_all_prices; update_all_prices()"
+exit
+```
+
+Der SDE-Import dauert ein paar Minuten, der erste Preisabgleich ebenfalls (alle Orders von The Forge).
+Den SDE-Import nach größeren EVE-Patches wiederholen.
+
+### 5. Neustart und Rechte
+
+```bash
+docker compose restart
+```
+
+Im Admin der passenden Gruppe oder dem State das Recht
 `ether_industry | general | Kann die Industrie-Tools nutzen` geben.
+
+### Update auf eine neue Version
+
+Versionsnummer in `conf/requirements.txt` anpassen, dann Schritt 3, danach `auth migrate` und `auth collectstatic --noinput` im Container, dann neu starten.
 
 ## Einstellungen
 
