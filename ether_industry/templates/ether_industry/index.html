@@ -5,9 +5,13 @@
 {% block content %}
 <div class="card mb-3">
   <div class="card-body">
-    <form method="get" class="d-flex gap-2 mb-2">
-      <input type="text" name="q" value="{{ q }}" class="form-control"
-             placeholder="Produkt suchen, z. B. Raven, Nanite Repair Paste, Fernite Carbide …" autofocus>
+    <form method="get" class="d-flex gap-2 mb-2" autocomplete="off">
+      <div class="position-relative flex-grow-1">
+        <input type="text" name="q" id="ei-search" value="{{ q }}" class="form-control"
+               placeholder="Produkt eintippen, z. B. Rav … oder Nanite …" autofocus
+               data-url="{% url 'ether_industry:autocomplete' %}">
+        <ul id="ei-suggest" class="dropdown-menu w-100 shadow" style="max-height:420px;overflow-y:auto"></ul>
+      </div>
       <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Suchen</button>
     </form>
     {% include "ether_industry/_prices.html" %}
@@ -38,4 +42,100 @@
   </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_javascript %}
+<script>
+/* Autovervollständigung für die Produktsuche: Vorschläge laden, anzeigen, per Tastatur/Maus auswählen */
+(function () {
+  const input = document.getElementById("ei-search");
+  const list = document.getElementById("ei-suggest");
+  let items = [], active = -1, timer = null, lastQuery = "";
+
+  /* Liste schließen und Auswahl zurücksetzen */
+  function hide() { list.classList.remove("show"); active = -1; }
+
+  /* Markiert den Eintrag an Position idx und scrollt ihn ins Bild */
+  function highlight(idx) {
+    const links = list.querySelectorAll("a");
+    links.forEach((a, i) => a.classList.toggle("active", i === idx));
+    if (links[idx]) links[idx].scrollIntoView({ block: "nearest" });
+    active = idx;
+  }
+
+  /* Baut die Vorschlagsliste aus den JSON-Ergebnissen (sicher per textContent) */
+  function render(results) {
+    items = results;
+    list.innerHTML = "";
+    if (!results.length) {
+      const li = document.createElement("li");
+      li.innerHTML = '<span class="dropdown-item-text text-body-secondary">Keine Treffer</span>';
+      list.appendChild(li);
+    }
+    results.forEach((r) => {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.className = "dropdown-item d-flex align-items-center gap-2";
+      a.href = r.url;
+      const img = document.createElement("img");
+      img.src = "https://images.evetech.net/types/" + r.type_id + "/icon?size=32";
+      img.width = 24; img.height = 24; img.alt = "";
+      const text = document.createElement("div");
+      text.className = "flex-grow-1";
+      const name = document.createElement("div");
+      name.textContent = r.name;
+      text.appendChild(name);
+      if (r.name_de) {
+        const de = document.createElement("small");
+        de.className = "text-body-secondary";
+        de.textContent = r.name_de;
+        text.appendChild(de);
+      }
+      const badge = document.createElement("span");
+      badge.className = "badge text-bg-secondary";
+      badge.textContent = r.activity;
+      a.append(img, text, badge);
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+    list.classList.add("show");
+    active = -1;
+  }
+
+  /* Holt Vorschläge vom Server; veraltete Antworten werden verworfen */
+  async function load(query) {
+    lastQuery = query;
+    try {
+      const resp = await fetch(input.dataset.url + "?q=" + encodeURIComponent(query), {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (query === lastQuery) render(data.results);
+    } catch (e) { /* Netzwerkfehler still ignorieren */ }
+  }
+
+  /* Bei jeder Eingabe kurz warten, dann laden (spart Anfragen beim Tippen) */
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (q.length < 2) { hide(); return; }
+    timer = setTimeout(() => load(q), 200);
+  });
+
+  /* Tastatursteuerung: Pfeile wählen, Enter öffnet, Escape schließt */
+  input.addEventListener("keydown", (e) => {
+    if (!list.classList.contains("show") || !items.length) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); highlight(Math.min(active + 1, items.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); highlight(Math.max(active - 1, 0)); }
+    else if (e.key === "Enter" && active >= 0) { e.preventDefault(); window.location = items[active].url; }
+    else if (e.key === "Escape") { hide(); }
+  });
+
+  /* Klick außerhalb schließt die Liste */
+  document.addEventListener("click", (e) => {
+    if (e.target !== input && !list.contains(e.target)) hide();
+  });
+})();
+</script>
 {% endblock %}

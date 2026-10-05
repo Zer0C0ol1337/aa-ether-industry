@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.3] - 2026-10-05
+
+### Hinzugefügt
+- Autovervollständigung im Suchfeld (ab 2 Zeichen, mit Icon, Pfeiltasten und Enter)
+- Route `autocomplete/` liefert Vorschläge als JSON
+
+### Geändert
+- Suche sortiert Treffer, die mit der Eingabe beginnen, nach oben
+
 ## [0.1.2] - 2026-10-05
 
 ### Behoben

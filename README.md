@@ -1,6 +1,6 @@
 # aa-ether-industry
 
-**Version 0.1.2** – Industrie- und Trading-Tools für Alliance Auth, gebaut für Ether Element [3THEL].
+**Version 0.1.3** – Industrie- und Trading-Tools für Alliance Auth, gebaut für Ether Element [3THEL].
 
 ## Funktionen
 
@@ -17,7 +17,7 @@ Alle Befehle im Ordner der Auth-Installation auf dem Server, dort wo `docker-com
 In `conf/requirements.txt` eine Zeile ergänzen:
 
 ```
-aa-ether-industry @ git+https://github.com/Zer0C0ol1337/aa-ether-industry.git@v0.1.2
+aa-ether-industry @ git+https://github.com/Zer0C0ol1337/aa-ether-industry.git@v0.1.3
 ```
 
 ### 2. Konfiguration
