@@ -1,0 +1,41 @@
+{% extends "allianceauth/base-bs5.html" %}
+{% block page_title %}Industrie-Rechner{% endblock %}
+{% block header_nav_brand %}Industrie-Rechner{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="get" class="d-flex gap-2 mb-2">
+      <input type="text" name="q" value="{{ q }}" class="form-control"
+             placeholder="Produkt suchen, z. B. Raven, Nanite Repair Paste, Fernite Carbide …" autofocus>
+      <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Suchen</button>
+    </form>
+    {% include "ether_industry/_prices.html" %}
+  </div>
+</div>
+
+{% if q and not results %}
+  <div class="alert alert-info">Nichts gefunden für „{{ q }}“. Mindestens 2 Zeichen eingeben.</div>
+{% endif %}
+
+{% if results %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th></th><th>Produkt</th><th>Art</th><th>Blueprint</th><th></th></tr></thead>
+      <tbody>
+      {% for p in results %}
+        <tr>
+          <td style="width:40px"><img src="https://images.evetech.net/types/{{ p.type.type_id }}/icon?size=32" alt="" width="32" height="32"></td>
+          <td>{{ p.type.name }}{% if p.type.name_de and p.type.name_de != p.type.name %}<br><small class="text-body-secondary">{{ p.type.name_de }}</small>{% endif %}</td>
+          <td>{{ p.activity.get_activity_display }}</td>
+          <td><small>{{ p.activity.blueprint.type.name }}</small></td>
+          <td class="text-end"><a href="{% url 'ether_industry:calculator' p.activity.id %}" class="btn btn-sm btn-outline-primary">Berechnen</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

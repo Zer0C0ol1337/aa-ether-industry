@@ -1,0 +1,5 @@
+{# Hinweis auf den Stand der Preisdaten #}
+<p class="text-body-secondary small mb-0">
+  Jita-Preise: {% if prices.jita %}{{ prices.jita|date:"d.m.Y H:i" }} UTC{% else %}noch nicht geladen{% endif %}
+  · CCP-Preise: {% if prices.adjusted %}{{ prices.adjusted|date:"d.m.Y H:i" }} UTC{% else %}noch nicht geladen{% endif %}
+</p>

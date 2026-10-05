@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aa-ether-industry"
+dynamic = ["version"]
+description = "Industrie- und Trading-Tools für Alliance Auth (Ether Element [3THEL])"
+readme = "README.md"
+license = "GPL-3.0"
+requires-python = ">=3.10"
+dependencies = [
+    "allianceauth>=4.0.0,<6",
+    "requests",
+]
+
+[tool.hatch.version]
+path = "ether_industry/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ether_industry"]
