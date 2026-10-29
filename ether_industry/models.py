@@ -141,7 +141,7 @@ class ItemPrice(models.Model):
 
 
 class IndustryStructure(models.Model):
-    """Eine Industrie-Struktur der Corp (aus Corptools), mit System, Sicherheit und eingebauten Rigs."""
+    """Eine Industrie-Struktur der Corp (aus Corptools bzw. aa-structures), mit System, Sicherheit und eingebauten Rigs."""
 
     structure_id = models.BigIntegerField(primary_key=True)
     name = models.CharField(max_length=255)
@@ -151,6 +151,9 @@ class IndustryStructure(models.Model):
     security_status = models.FloatField(null=True, blank=True)
     corporation_name = models.CharField(max_length=255, blank=True, default="")
     rig_type_ids = models.JSONField(default=list, blank=True)
+    rig_source = models.CharField(
+        max_length=20, blank=True, default="", help_text="Woher die Rigs stammen: corptools oder aa-structures."
+    )
     synced_at = models.DateTimeField(auto_now=True)
 
     class Meta:

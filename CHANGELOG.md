@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.1] - 2026-10-29
+
+### Hinzugefügt
+- **aa-structures als zweite Quelle:** ist die App Structures installiert, werden Industrie-Strukturen und ihre Rigs (Fitting, Rig-Slots) auch von dort gelesen. Corptools hat Vorrang; fehlen dort die Rigs (keine Corp-Assets ohne Director-Token), kommen sie aus aa-structures. Strukturen, die nur aa-structures kennt, werden ergänzt.
+- Struktur-Übersicht zeigt, woher die Rigs stammen, und einen Hinweis, wenn keine gefunden wurden
+- Migration `0003_rig_source`
+
+### Geändert
+- Button „Aus Corptools neu einlesen“ heißt jetzt „Strukturen neu einlesen“
+
 ## [0.2.0] - 2026-10-29
 
 ### Hinzugefügt

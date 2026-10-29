@@ -14,7 +14,7 @@ from django.views.decorators.http import require_POST
 from . import bonuses
 from .calc import calculate
 from .models import ActivityProduct, BlueprintActivity, IndustryStructure, ItemPrice, RigType, SystemCostIndex
-from .structures import best_skill_levels, corp_blueprints, corptools_available
+from .structures import aastructures_available, best_skill_levels, corp_blueprints, corptools_available
 
 CALC_ACTIVITIES = (BlueprintActivity.MANUFACTURING, BlueprintActivity.REACTION)
 AUTOCOMPLETE_LIMIT = 15
@@ -88,6 +88,7 @@ def index(request):
         {
             "q": query, "results": results, "prices": _price_status(), "structures": structures,
             "can_manage": request.user.has_perm("ether_industry.manage_industry"), "corptools": corptools_available(),
+            "aa_structures": aastructures_available(),
         },
     )
 
@@ -270,7 +271,7 @@ def calculator(request, activity_id):
 @login_required
 @require_POST
 def sync_structures(request):
-    """Route /structures/sync/: Strukturen, Rigs und Kostenindizes neu einlesen (Recht manage_industry)."""
+    """Route /structures/sync/: Strukturen und Rigs (Corptools/aa-structures) und Kostenindizes neu einlesen (Recht manage_industry)."""
     if not request.user.has_perm("ether_industry.manage_industry"):
         raise PermissionDenied
     from .tasks import sync_structures_task

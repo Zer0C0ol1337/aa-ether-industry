@@ -1,13 +1,13 @@
 # aa-ether-industry
 
-**Version 0.2.0** – Industrie- und Trading-Tools für Alliance Auth, gebaut für Ether Element [3THEL].
+**Version 0.2.1** – Industrie- und Trading-Tools für Alliance Auth, gebaut für Ether Element [3THEL].
 
 ## Funktionen
 
 - Import aller Blueprints und Rezepte aus der offiziellen CCP-SDE
 - Preise aus Jita 4-4 (Sell/Buy) und CCP-Adjusted-Preise, automatisch per Celery
 - Industrie-Rechner für Herstellung und Reactions: Materialbedarf, Jobkosten, Produktwert, Gewinn, Marge, **Bauzeit und Gewinn pro Stunde**
-- **Strukturen aus Corptools** (Raitaru, Azbel, Sotiyo, Athanor, Tatara) mit ihren Rigs: Rollenbonus und Rig-Boni samt Sicherheits-Multiplikator werden im Rechner automatisch eingerechnet, Kostenindex des Systems kommt aus der ESI
+- **Strukturen aus Corptools und/oder aa-structures** (Raitaru, Azbel, Sotiyo, Athanor, Tatara) mit ihren Rigs: Rollenbonus und Rig-Boni samt Sicherheits-Multiplikator werden im Rechner automatisch eingerechnet, Kostenindex des Systems kommt aus der ESI
 - TE, Skills (aus Corptools vorbelegt) und Implantate; ME/TE eigener Corp-Blueprints mit einem Klick
 
 ## Installation unter Docker (offizielles Alliance-Auth-Docker-Setup)
@@ -19,7 +19,7 @@ Alle Befehle im Ordner der Auth-Installation auf dem Server, dort wo `docker-com
 In `conf/requirements.txt` eine Zeile ergänzen:
 
 ```
-aa-ether-industry @ git+https://github.com/Zer0C0ol1337/aa-ether-industry.git@v0.2.0
+aa-ether-industry @ git+https://github.com/Zer0C0ol1337/aa-ether-industry.git@v0.2.1
 ```
 
 ### 2. Konfiguration
@@ -75,16 +75,17 @@ Im Admin der passenden Gruppe oder dem State das Recht
 
 Versionsnummer in `conf/requirements.txt` anpassen, dann Schritt 3, danach `auth migrate` und `auth collectstatic --noinput` im Container, dann neu starten.
 
-## Strukturen und Rigs (optional, mit Corptools)
+## Strukturen und Rigs (optional, mit Corptools und/oder aa-structures)
 
 Ist [allianceauth-corptools](https://github.com/pvyParts/allianceauth-corp-tools) installiert, liest das Plugin die Industrie-Strukturen der Corp und die eingebauten Rigs aus.
 Voraussetzung: ein **Corp-Token in Corptools** mit Strukturen und Corp-Assets (für ME/TE eigener Blueprints zusätzlich Blueprints).
+Ist zusätzlich oder stattdessen die App [Structures (aa-structures)](https://gitlab.com/ErikKalkoken/aa-structures) installiert, liest das Plugin Strukturen und Rigs auch von dort (aa-structures holt die Fittings mit seinem eigenen Owner-Token). Corptools hat Vorrang; fehlen dort die Rigs, werden die aus aa-structures genommen.
 Der Abgleich läuft automatisch nach jedem Preisabgleich; Verwalter (`manage_industry`) können ihn auf der Startseite auch von Hand anstoßen.
 
 - Rollenboni: Raitaru/Azbel/Sotiyo Material −1 %, Zeit −15/−20/−30 %, Jobkosten −3/−4/−5 %; Tatara Reaction-Zeit −25 %
 - Rig-Boni und Sicherheits-Multiplikatoren kommen aus der Dogma der Rigs – lokal aus django-eveonline-sde (kommt mit Corptools), nur falls dort nicht vorhanden aus der ESI. Welches Rig für welches Produkt gilt, liefert CCP nicht mit – das Plugin ordnet es über den Rig-Namen zu; im Rechner lässt sich die Auswahl ändern.
 - TE senkt nur die Bauzeit, nicht die Jobkosten.
-- Ohne Corptools funktioniert der Rechner wie bisher mit frei eingegebenen Boni.
+- Ohne Corptools und aa-structures funktioniert der Rechner wie bisher mit frei eingegebenen Boni.
 
 ## Einstellungen
 
@@ -95,7 +96,7 @@ Der Abgleich läuft automatisch nach jedem Preisabgleich; Verwalter (`manage_ind
 | `ETHER_INDUSTRY_ESI_BASE_URL` | `https://esi.evetech.net/latest` | ESI-Adresse |
 | `ETHER_INDUSTRY_PRICE_REGION_ID` | `10000002` (The Forge) | Region für Marktpreise |
 | `ETHER_INDUSTRY_PRICE_STATION_ID` | `60003760` (Jita 4-4) | Station für Marktpreise |
-| `ETHER_INDUSTRY_STRUCTURE_CORP_IDS` | alle Corps mit Corptools-Corp-Audit | Nur Strukturen/Blueprints dieser Corp-IDs verwenden, z. B. `[98000001]` |
+| `ETHER_INDUSTRY_STRUCTURE_CORP_IDS` | alle Corps (Corptools-Corp-Audit bzw. aa-structures-Owner) | Nur Strukturen/Blueprints dieser Corp-IDs verwenden, z. B. `[98000001]` |
 
 ## Lizenz
 

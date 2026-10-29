@@ -111,6 +111,7 @@ class StructureSyncTest(TestCase):
         st = IndustryStructure.objects.get()
         self.assertEqual(st.system_name, "R-ARKN")
         self.assertEqual(st.rig_type_ids, [RIG_ME, RIG_TE])
+        self.assertEqual(st.rig_source, "corptools")
         rig = RigType.objects.get(type_id=RIG_ME)
         self.assertTrue(rig.from_dogma)
         self.assertAlmostEqual(rig.material_bonus, 2.4)
@@ -142,6 +143,39 @@ class StructureSyncTest(TestCase):
         self.assertTrue(loaded.from_dogma)
         self.assertAlmostEqual(loaded.material_bonus, 2.4)
         self.assertAlmostEqual(loaded.lowsec_mod, 1.9)
+
+    def test_rigs_from_aa_structures_when_corptools_has_none(self):
+        """Corptools kennt die Struktur, aber keine Assets – die Rigs kommen aus aa-structures, dazu eine zweite Struktur."""
+        from corptools.models import CorpAsset
+
+        CorpAsset.objects.filter(location_flag__startswith="RigSlot").delete()
+        aa_data = [
+            {"structure_id": 1035000000001, "name": "R-ARKN - Werkbank", "type_id": 35825, "system_id": 30002000,
+             "system_name": "R-ARKN", "security_status": -0.25, "corporation_name": "Ether Element",
+             "rig_type_ids": [RIG_ME, RIG_TE], "rig_source": "aa-structures"},
+            {"structure_id": 1046136644701, "name": "DIBH-Q - Zeus", "type_id": 35827, "system_id": 30002001,
+             "system_name": "DIBH-Q", "security_status": -0.4, "corporation_name": "Invidia Administrative",
+             "rig_type_ids": [], "rig_source": ""},
+        ]
+        with mock.patch("ether_industry.structures.aastructures_available", return_value=True), \
+                mock.patch("ether_industry.structures.read_aastructures_structures", return_value=aa_data):
+            stats = self._sync()
+        self.assertEqual(stats["structures"], 2)
+        werkbank = IndustryStructure.objects.get(structure_id=1035000000001)
+        self.assertEqual(werkbank.rig_type_ids, [RIG_ME, RIG_TE])
+        self.assertEqual(werkbank.rig_source, "aa-structures")
+        self.assertTrue(IndustryStructure.objects.filter(name="DIBH-Q - Zeus").exists())
+
+    def test_merge_prefers_corptools_rigs(self):
+        """Hat Corptools Rigs, bleiben die – aa-structures ergänzt nur."""
+        from ether_industry.structures import merge_structures
+
+        corp = [{"structure_id": 1, "rig_type_ids": [10], "rig_source": "corptools"}]
+        aa = [{"structure_id": 1, "rig_type_ids": [20], "rig_source": "aa-structures"},
+              {"structure_id": 2, "rig_type_ids": [30], "rig_source": "aa-structures"}]
+        merged = {d["structure_id"]: d for d in merge_structures(corp, aa)}
+        self.assertEqual(merged[1]["rig_type_ids"], [10])
+        self.assertEqual(merged[2]["rig_type_ids"], [30])
 
     def test_best_skills(self):
         """Skills kommen aus Corptools."""

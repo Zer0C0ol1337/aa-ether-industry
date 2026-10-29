@@ -25,7 +25,7 @@
     <span><i class="fas fa-industry me-1"></i> Unsere Industrie-Strukturen ({{ structures|length }})</span>
     {% if can_manage %}
       <form method="post" action="{% url 'ether_industry:sync_structures' %}">{% csrf_token %}
-        <button class="btn btn-sm btn-outline-primary"><i class="fas fa-rotate"></i> Aus Corptools neu einlesen</button>
+        <button class="btn btn-sm btn-outline-primary"><i class="fas fa-rotate"></i> Strukturen neu einlesen</button>
       </form>
     {% endif %}
   </div>
@@ -40,7 +40,8 @@
           <td>{{ s.structure.system_name }} <span class="small text-body-secondary">{% if s.band == "high" %}Highsec{% elif s.band == "low" %}Lowsec{% elif s.band == "wh" %}WH{% else %}Nullsec{% endif %}</span></td>
           <td class="small">{% if s.me or s.te or s.cost %}ME −{{ s.me|floatformat:"-1" }} % · TE −{{ s.te|floatformat:"-1" }} % · Kosten −{{ s.cost|floatformat:"-1" }} %{% else %}–{% endif %}</td>
           <td class="small">
-            {% for rg in s.rigs %}<div>{{ rg.name|cut:"Standup " }}: ME −{{ rg.me|floatformat:"-2" }} % · TE −{{ rg.te|floatformat:"-2" }} %{% if rg.estimated %} <span class="text-warning" title="Standardwert, echte Rig-Werte noch nicht geladen">*</span>{% endif %}</div>{% empty %}–{% endfor %}
+            {% for rg in s.rigs %}<div>{{ rg.name|cut:"Standup " }}: ME −{{ rg.me|floatformat:"-2" }} % · TE −{{ rg.te|floatformat:"-2" }} %{% if rg.estimated %} <span class="text-warning" title="Standardwert, echte Rig-Werte noch nicht geladen">*</span>{% endif %}</div>{% empty %}<span class="text-body-secondary" title="Rigs kommen aus den Corp-Assets in Corptools (Director-Token mit Asset-Recht) oder aus aa-structures">keine gefunden</span>{% endfor %}
+            {% if s.structure.rig_source %}<div class="text-body-secondary">Quelle: {{ s.structure.rig_source }}</div>{% endif %}
           </td>
         </tr>
       {% endfor %}
@@ -49,7 +50,7 @@
   </div>
   {% else %}
     <div class="card-body small text-body-secondary">
-      {% if corptools %}Noch keine Raitaru, Azbel, Sotiyo, Athanor oder Tatara eingelesen. Voraussetzung: Corp-Token in Corptools mit Strukturen und Corp-Assets.{% else %}Corptools ist nicht installiert – im Rechner können die Boni von Hand eingetragen werden.{% endif %}
+      {% if corptools or aa_structures %}Noch keine Raitaru, Azbel, Sotiyo, Athanor oder Tatara eingelesen. Quellen: Corptools (Corp-Token mit Strukturen und Corp-Assets) und/oder aa-structures.{% else %}Weder Corptools noch aa-structures ist installiert – im Rechner können die Boni von Hand eingetragen werden.{% endif %}
     </div>
   {% endif %}
 </div>

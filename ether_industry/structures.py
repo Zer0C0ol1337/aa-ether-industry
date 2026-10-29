@@ -1,4 +1,4 @@
-"""Industrie-Strukturen und Rigs der Corp aus Corptools einlesen; Rig-Boni aus eve_sde (sonst ESI), Kostenindizes aus der ESI."""
+"""Industrie-Strukturen und Rigs der Corp aus Corptools und/oder aa-structures einlesen; Rig-Boni aus eve_sde (sonst ESI), Kostenindizes aus der ESI."""
 
 import logging
 
@@ -60,8 +60,61 @@ def read_corptools_structures() -> list:
             "security_status": getattr(system, "security_status", None),
             "corporation_name": s.corporation.corporation.corporation_name,
             "rig_type_ids": sorted(rigs.get(s.structure_id, [])),
+            "rig_source": "corptools" if rigs.get(s.structure_id) else "",
         })
     return result
+
+
+def aastructures_available() -> bool:
+    """True, wenn die App Structures (aa-structures) installiert ist – sie kennt die Fittings samt Rigs."""
+    return apps.is_installed("structures")
+
+
+def read_aastructures_structures() -> list:
+    """Liest die Industrie-Strukturen samt Rig-Type-IDs aus aa-structures (ohne zu speichern)."""
+    from structures.models import Structure as AaStructure, StructureItem
+
+    qs = AaStructure.objects.filter(eve_type_id__in=INDUSTRY_STRUCTURE_TYPE_IDS).select_related(
+        "eve_solar_system", "owner__corporation"
+    )
+    if STRUCTURE_CORP_IDS:
+        qs = qs.filter(owner__corporation__corporation_id__in=STRUCTURE_CORP_IDS)
+    structures = list(qs)
+    rigs = {}
+    for structure_id, type_id in StructureItem.objects.filter(
+        structure_id__in=[s.id for s in structures], location_flag__startswith="RigSlot"
+    ).values_list("structure_id", "eve_type_id"):
+        rigs.setdefault(structure_id, []).append(type_id)
+    result = []
+    for s in structures:
+        system = s.eve_solar_system
+        result.append({
+            "structure_id": s.id,
+            "name": s.name,
+            "type_id": s.eve_type_id,
+            "system_id": system.id if system else None,
+            "system_name": system.name if system else "",
+            "security_status": getattr(system, "security_status", None),
+            "corporation_name": s.owner.corporation.corporation_name if s.owner_id else "",
+            "rig_type_ids": sorted(rigs.get(s.id, [])),
+            "rig_source": "aa-structures" if rigs.get(s.id) else "",
+        })
+    return result
+
+
+def merge_structures(corptools_data: list, aastructures_data: list) -> list:
+    """Führt beide Quellen zusammen: Corptools zuerst; fehlen dort die Rigs, kommen sie aus aa-structures.
+
+    Strukturen, die nur aa-structures kennt, werden ergänzt.
+    """
+    other = {d["structure_id"]: d for d in aastructures_data}
+    merged = []
+    for d in corptools_data:
+        extra = other.pop(d["structure_id"], None)
+        if extra and not d["rig_type_ids"] and extra["rig_type_ids"]:
+            d = {**d, "rig_type_ids": extra["rig_type_ids"], "rig_source": "aa-structures"}
+        merged.append(d)
+    return merged + list(other.values())
 
 
 def _attribute_name(attribute_id) -> str:
@@ -130,10 +183,16 @@ def update_cost_indices() -> int:
 
 
 def sync_structures() -> dict:
-    """Gleicht die Industrie-Strukturen mit Corptools ab, lädt fehlende Rig-Boni und die Kostenindizes."""
-    stats = {"structures": 0, "rigs_loaded": 0, "cost_indices": 0, "corptools": corptools_available()}
-    if stats["corptools"]:
-        data = read_corptools_structures()
+    """Gleicht die Industrie-Strukturen mit Corptools und aa-structures ab, lädt fehlende Rig-Boni und die Kostenindizes."""
+    stats = {
+        "structures": 0, "rigs_loaded": 0, "cost_indices": 0,
+        "corptools": corptools_available(), "aa_structures": aastructures_available(),
+    }
+    if stats["corptools"] or stats["aa_structures"]:
+        data = merge_structures(
+            read_corptools_structures() if stats["corptools"] else [],
+            read_aastructures_structures() if stats["aa_structures"] else [],
+        )
         with transaction.atomic():
             IndustryStructure.objects.exclude(structure_id__in=[d["structure_id"] for d in data]).delete()
             for d in data:

@@ -34,7 +34,7 @@
             <option value="{{ st.structure_id }}" {% if p.structure == st.structure_id|stringformat:"s" %}selected{% endif %}>{{ st.name }}</option>
           {% endfor %}
         </select>
-        {% if not structures %}<div class="form-text">{% if corptools %}Noch keine passende Struktur aus Corptools eingelesen.{% else %}Corptools ist nicht installiert – Boni von Hand eintragen.{% endif %}</div>{% endif %}
+        {% if not structures %}<div class="form-text">Noch keine passende Struktur eingelesen (Corptools / aa-structures) – Boni von Hand eintragen.</div>{% endif %}
       </div>
       {% if info %}
       <div class="col-12 col-md-3"><label class="form-label small">Rig für dieses Produkt</label>
@@ -114,7 +114,7 @@
     · Zeit: Struktur −{{ bonus_summary.structure_te|floatformat:"-2" }} % · Rig −{{ bonus_summary.rig_te|floatformat:"-2" }} %
     {% if is_manufacturing %}· TE {{ p.te }} % · Industry {{ p.ind }} · Adv. Industry {{ p.adv }}{% if p.implant %} · Implantat −{{ p.implant }} %{% endif %}{% else %}· Reactions {{ p.react }}{% endif %}
     · Jobkosten: Kostenindex {{ p.index|floatformat:"-2" }} %{% if bonus_summary.structure_cost %} −{{ bonus_summary.structure_cost|floatformat:"-2" }} % Strukturbonus = {{ r.index_part_pct|floatformat:2 }} %{% endif %} + Steuer {{ p.tax|floatformat:"-2" }} % + SCC 4 %
-    {% if info and not info.rigs %}<br><span class="text-body-secondary">Keine Material-/Zeit-Rigs in dieser Struktur gefunden.</span>{% endif %}
+    {% if info and not info.rigs %}<br><span class="text-body-secondary">Keine Material-/Zeit-Rigs zu dieser Struktur gefunden – Corptools braucht dafür die Corp-Assets (Director-Token), alternativ liefert aa-structures die Rigs.</span>{% endif %}
     {% if applied_rigs and applied_rigs.0.estimated %}<br><span class="text-warning">Rig-Werte sind Standardwerte – die genauen Werte werden beim nächsten Struktur-Abgleich geladen.</span>{% endif %}
   </div>
 </div>
