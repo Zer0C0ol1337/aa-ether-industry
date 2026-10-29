@@ -19,3 +19,7 @@ path = "ether_industry/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["ether_industry"]
+exclude = ["ether_industry/tests"]
+
+[tool.hatch.build.targets.sdist]
+exclude = ["ether_industry/tests"]

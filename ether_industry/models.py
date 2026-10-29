@@ -138,3 +138,63 @@ class ItemPrice(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+class IndustryStructure(models.Model):
+    """Eine Industrie-Struktur der Corp (aus Corptools), mit System, Sicherheit und eingebauten Rigs."""
+
+    structure_id = models.BigIntegerField(primary_key=True)
+    name = models.CharField(max_length=255)
+    type_id = models.PositiveIntegerField()
+    system_id = models.PositiveIntegerField(null=True, blank=True)
+    system_name = models.CharField(max_length=100, blank=True, default="")
+    security_status = models.FloatField(null=True, blank=True)
+    corporation_name = models.CharField(max_length=255, blank=True, default="")
+    rig_type_ids = models.JSONField(default=list, blank=True)
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()
+        ordering = ["name"]
+
+    def __str__(self):
+        """Anzeigename im Admin und in der Auswahl."""
+        return self.name
+
+
+class RigType(models.Model):
+    """Boni eines Struktur-Rigs aus seiner Dogma (eve_sde oder ESI), Prozentwerte positiv, ohne Sicherheits-Multiplikator.
+
+    from_dogma = True heißt: echte Dogma-Werte gefunden (lokal aus eve_sde oder aus der ESI).
+    """
+
+    type_id = models.PositiveIntegerField(primary_key=True)
+    name = models.CharField(max_length=255)
+    material_bonus = models.FloatField(default=0)
+    time_bonus = models.FloatField(default=0)
+    cost_bonus = models.FloatField(default=0)
+    hisec_mod = models.FloatField(null=True, blank=True)
+    lowsec_mod = models.FloatField(null=True, blank=True)
+    nullsec_mod = models.FloatField(null=True, blank=True)
+    from_dogma = models.BooleanField(default=False)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()
+        ordering = ["name"]
+
+    def __str__(self):
+        """Anzeigename im Admin."""
+        return self.name
+
+
+class SystemCostIndex(models.Model):
+    """Industrie-Kostenindex eines Sonnensystems aus der ESI, in Prozent."""
+
+    system_id = models.PositiveIntegerField(primary_key=True)
+    manufacturing = models.FloatField(default=0)
+    reaction = models.FloatField(default=0)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()

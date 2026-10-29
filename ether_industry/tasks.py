@@ -63,6 +63,16 @@ def update_jita_prices():
 
 @shared_task
 def update_all_prices():
-    """Führt beide Preisabgleiche nacheinander aus (für Celery Beat)."""
+    """Preisabgleiche, danach Strukturen/Rigs/Kostenindizes – nacheinander (für Celery Beat)."""
     update_adjusted_prices()
     update_jita_prices()
+    sync_structures_task()
+
+
+@shared_task
+def sync_structures_task():
+    """Industrie-Strukturen und Rigs aus Corptools, Rig-Boni und Kostenindizes aus der ESI aktualisieren."""
+    from .structures import sync_structures
+
+    return sync_structures()
+

@@ -11,26 +11,67 @@
   <div>
     <h4 class="mb-0">{{ activity.blueprint.type.name }}</h4>
     <span class="badge text-bg-secondary">{{ activity.get_activity_display }}</span>
-    <span class="text-body-secondary small ms-2">Dauer: {{ r.duration|duration }} (ohne TE/Skills)</span>
+    <span class="text-body-secondary small ms-2">Grundzeit: {{ r.base_duration|duration }}</span>
   </div>
 </div>
 
 {# Einstellungen #}
-<div class="card mb-3">
+<form method="get" class="card mb-3">
   <div class="card-body">
-    <form method="get" class="row g-2 align-items-end">
+    <div class="row g-2 align-items-end">
       <div class="col-6 col-md-2"><label class="form-label small">Runs</label>
         <input type="number" name="runs" min="1" value="{{ p.runs }}" class="form-control"></div>
       {% if is_manufacturing %}
-      <div class="col-6 col-md-1"><label class="form-label small">ME</label>
+      <div class="col-3 col-md-1"><label class="form-label small">ME</label>
         <input type="number" name="me" min="0" max="10" value="{{ p.me }}" class="form-control"></div>
+      <div class="col-3 col-md-1"><label class="form-label small" title="Time Efficiency des Blueprints – senkt nur die Bauzeit">TE</label>
+        <input type="number" name="te" min="0" max="20" step="2" value="{{ p.te }}" class="form-control"></div>
       {% endif %}
-      <div class="col-6 col-md-2"><label class="form-label small">Struktur-Bonus %</label>
-        <input type="text" name="bonus" value="{{ p.bonus }}" class="form-control"></div>
+      <div class="col-12 col-md-5"><label class="form-label small">Struktur</label>
+        <select name="structure" class="form-select" onchange="this.form.index.value='';if(this.form.rig){this.form.rig.value='auto';}this.form.submit()">
+          <option value="" {% if not p.structure %}selected{% endif %}>– ohne Struktur / Werte von Hand –</option>
+          {% for st in structures %}
+            <option value="{{ st.structure_id }}" {% if p.structure == st.structure_id|stringformat:"s" %}selected{% endif %}>{{ st.name }}</option>
+          {% endfor %}
+        </select>
+        {% if not structures %}<div class="form-text">{% if corptools %}Noch keine passende Struktur aus Corptools eingelesen.{% else %}Corptools ist nicht installiert – Boni von Hand eintragen.{% endif %}</div>{% endif %}
+      </div>
+      {% if info %}
+      <div class="col-12 col-md-3"><label class="form-label small">Rig für dieses Produkt</label>
+        <select name="rig" class="form-select" onchange="this.form.submit()">
+          <option value="auto" {% if p.rig == "auto" %}selected{% endif %}>automatisch ({% if p.rig == "auto" %}{{ applied_rigs|length }} passend{% else %}alle passenden{% endif %})</option>
+          <option value="none" {% if p.rig == "none" %}selected{% endif %}>kein Rig</option>
+          {% for rg in info.rigs %}
+            <option value="{{ rg.type_id }}" {% if p.rig == rg.type_id|stringformat:"s" %}selected{% endif %}>{{ rg.name|cut:"Standup " }}{% if rg.suggested %} ✓{% endif %}</option>
+          {% endfor %}
+        </select></div>
+      {% else %}
+      <div class="col-6 col-md-2"><label class="form-label small">Material-Bonus %</label>
+        <input type="text" name="bonus" value="{{ p.bonus }}" class="form-control" title="Struktur- und Rig-Bonus zusammen"></div>
+      <div class="col-6 col-md-2"><label class="form-label small">Zeit-Bonus %</label>
+        <input type="text" name="tebonus" value="{{ p.tebonus }}" class="form-control" title="Struktur- und Rig-Zeitbonus zusammen"></div>
+      {% endif %}
+    </div>
+
+    <div class="row g-2 align-items-end mt-1">
       <div class="col-6 col-md-2"><label class="form-label small">System-Kostenindex %</label>
-        <input type="text" name="index" value="{{ p.index }}" class="form-control"></div>
-      <div class="col-6 col-md-1"><label class="form-label small">Steuer %</label>
+        <input type="text" name="index" value="{{ p.index|floatformat:"-2" }}" class="form-control">
+        {% if auto_index is not None %}<div class="form-text">aus der ESI: {{ auto_index|floatformat:2 }} %</div>{% endif %}</div>
+      <div class="col-6 col-md-2"><label class="form-label small">Steuer der Struktur %</label>
         <input type="text" name="tax" value="{{ p.tax }}" class="form-control"></div>
+      {% if is_manufacturing %}
+      <div class="col-4 col-md-1"><label class="form-label small">Industry</label>
+        <input type="number" name="ind" min="0" max="5" value="{{ p.ind }}" class="form-control"></div>
+      <div class="col-4 col-md-1"><label class="form-label small" title="Advanced Industry">Adv. Ind.</label>
+        <input type="number" name="adv" min="0" max="5" value="{{ p.adv }}" class="form-control"></div>
+      <div class="col-4 col-md-2"><label class="form-label small">Implantat</label>
+        <select name="implant" class="form-select">
+          {% for value, label in implants %}<option value="{{ value }}" {% if p.implant == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></div>
+      {% else %}
+      <div class="col-4 col-md-1"><label class="form-label small">Reactions</label>
+        <input type="number" name="react" min="0" max="5" value="{{ p.react }}" class="form-control"></div>
+      {% endif %}
       <div class="col-6 col-md-2"><label class="form-label small">Material kaufen zu</label>
         <select name="mat" class="form-select">
           <option value="sell" {% if p.mat == "sell" %}selected{% endif %}>Jita Sell</option>
@@ -41,24 +82,62 @@
           <option value="sell" {% if p.prod == "sell" %}selected{% endif %}>Jita Sell</option>
           <option value="buy" {% if p.prod == "buy" %}selected{% endif %}>Jita Buy</option>
         </select></div>
-      <div class="col-12"><button type="submit" class="btn btn-primary">Neu berechnen</button></div>
-    </form>
+    </div>
+    {% if skills_from_corptools %}<div class="form-text">Skills vorbelegt mit deinem besten Charakter aus Corptools. Struktur, Skills, Implantat und Steuer werden für dich gemerkt.</div>{% endif %}
+
+    {% if corp_blueprints %}
+      {# eigene Corp-Blueprints: ME/TE mit einem Klick übernehmen #}
+      <div class="mt-2 small">Eigene Blueprints:
+        {% for bp in corp_blueprints %}
+          <button type="button" class="btn btn-sm btn-outline-secondary py-0 me-1"
+                  onclick="this.form.me.value={{ bp.me }};this.form.te.value={{ bp.te }};this.form.submit();">
+            {% if bp.bpc %}BPC{% else %}BPO{% endif %} ME {{ bp.me }} / TE {{ bp.te }}{% if bp.bpc and bp.runs %} · {{ bp.runs }} Runs{% endif %}
+          </button>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary mt-3">Neu berechnen</button>
+  </div>
+</form>
+
+{# Boni, die in diese Rechnung eingehen #}
+<div class="card mb-3">
+  <div class="card-body small">
+    {% if info %}
+      <strong>{{ info.structure.name }}</strong> ({{ info.type_name }}, {{ info.structure.system_name }},
+      {% if info.band == "high" %}Highsec{% elif info.band == "low" %}Lowsec{% elif info.band == "wh" %}Wurmloch{% else %}Nullsec{% endif %}{% if info.structure.security_status is not None %} {{ info.structure.security_status|floatformat:1 }}{% endif %})
+      <br>
+    {% endif %}
+    Material: Struktur −{{ bonus_summary.structure_me|floatformat:"-2" }} % · Rig −{{ bonus_summary.rig_me|floatformat:"-2" }} %
+    {% if applied_rigs %}<span class="text-body-secondary">({% for rg in applied_rigs %}{{ rg.name|cut:"Standup " }}{% if not forloop.last %}, {% endif %}{% endfor %} · ×{{ applied_rigs.0.multiplier|floatformat:"-2" }} Sicherheit)</span>{% endif %}
+    · Zeit: Struktur −{{ bonus_summary.structure_te|floatformat:"-2" }} % · Rig −{{ bonus_summary.rig_te|floatformat:"-2" }} %
+    {% if is_manufacturing %}· TE {{ p.te }} % · Industry {{ p.ind }} · Adv. Industry {{ p.adv }}{% if p.implant %} · Implantat −{{ p.implant }} %{% endif %}{% else %}· Reactions {{ p.react }}{% endif %}
+    · Jobkosten: Kostenindex {{ p.index|floatformat:"-2" }} %{% if bonus_summary.structure_cost %} −{{ bonus_summary.structure_cost|floatformat:"-2" }} % Strukturbonus = {{ r.index_part_pct|floatformat:2 }} %{% endif %} + Steuer {{ p.tax|floatformat:"-2" }} % + SCC 4 %
+    {% if info and not info.rigs %}<br><span class="text-body-secondary">Keine Material-/Zeit-Rigs in dieser Struktur gefunden.</span>{% endif %}
+    {% if applied_rigs and applied_rigs.0.estimated %}<br><span class="text-warning">Rig-Werte sind Standardwerte – die genauen Werte werden beim nächsten Struktur-Abgleich geladen.</span>{% endif %}
   </div>
 </div>
 
 {# Zusammenfassung #}
 <div class="row g-3 mb-3">
-  <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+  <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body">
     <div class="small text-body-secondary">Materialkosten</div><div class="fs-5">{{ r.material_total|isk }} ISK</div></div></div></div>
-  <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+  <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body">
     <div class="small text-body-secondary">Jobkosten</div><div class="fs-5">{{ r.job_cost|isk }} ISK</div>
     <div class="small text-body-secondary">Item-Wert (EIV): {{ r.eiv|isk:0 }}</div></div></div></div>
-  <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body">
+  <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body">
     <div class="small text-body-secondary">Produktwert</div><div class="fs-5">{{ r.product_total|isk }} ISK</div></div></div></div>
-  <div class="col-6 col-lg-3"><div class="card h-100 {% if r.profit >= 0 %}border-success{% else %}border-danger{% endif %}"><div class="card-body">
+  <div class="col-6 col-lg-2"><div class="card h-100 {% if r.profit >= 0 %}border-success{% else %}border-danger{% endif %}"><div class="card-body">
     <div class="small text-body-secondary">Gewinn</div>
     <div class="fs-5 {% if r.profit >= 0 %}text-success{% else %}text-danger{% endif %}">{{ r.profit|isk }} ISK</div>
     <div class="small">Marge: {{ r.margin_pct|isk:1 }} %</div></div></div></div>
+  <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body">
+    <div class="small text-body-secondary">Bauzeit</div><div class="fs-5">{{ r.duration|duration }}</div>
+    <div class="small text-body-secondary">{% if r.time_saved %}{{ r.time_saved|duration }} gespart{% else %}keine Zeitboni{% endif %}</div></div></div></div>
+  <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body">
+    <div class="small text-body-secondary">Gewinn pro Stunde</div>
+    <div class="fs-5 {% if r.isk_per_hour >= 0 %}text-success{% else %}text-danger{% endif %}">{{ r.isk_per_hour|isk:0 }} ISK</div></div></div></div>
 </div>
 
 {% if r.missing_prices %}

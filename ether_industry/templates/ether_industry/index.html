@@ -18,6 +18,43 @@
   </div>
 </div>
 
+{# Industrie-Strukturen der Corp mit Rigs und Boni #}
+{% if structures or can_manage %}
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="fas fa-industry me-1"></i> Unsere Industrie-Strukturen ({{ structures|length }})</span>
+    {% if can_manage %}
+      <form method="post" action="{% url 'ether_industry:sync_structures' %}">{% csrf_token %}
+        <button class="btn btn-sm btn-outline-primary"><i class="fas fa-rotate"></i> Aus Corptools neu einlesen</button>
+      </form>
+    {% endif %}
+  </div>
+  {% if structures %}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>Struktur</th><th>System</th><th>Rollenbonus</th><th>Rigs (Bonus nach Sicherheit)</th></tr></thead>
+      <tbody>
+      {% for s in structures %}
+        <tr>
+          <td>{{ s.structure.name }}<div class="small text-body-secondary">{{ s.type_name }}</div></td>
+          <td>{{ s.structure.system_name }} <span class="small text-body-secondary">{% if s.band == "high" %}Highsec{% elif s.band == "low" %}Lowsec{% elif s.band == "wh" %}WH{% else %}Nullsec{% endif %}</span></td>
+          <td class="small">{% if s.me or s.te or s.cost %}ME −{{ s.me|floatformat:"-1" }} % · TE −{{ s.te|floatformat:"-1" }} % · Kosten −{{ s.cost|floatformat:"-1" }} %{% else %}–{% endif %}</td>
+          <td class="small">
+            {% for rg in s.rigs %}<div>{{ rg.name|cut:"Standup " }}: ME −{{ rg.me|floatformat:"-2" }} % · TE −{{ rg.te|floatformat:"-2" }} %{% if rg.estimated %} <span class="text-warning" title="Standardwert, echte Rig-Werte noch nicht geladen">*</span>{% endif %}</div>{% empty %}–{% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="card-body small text-body-secondary">
+      {% if corptools %}Noch keine Raitaru, Azbel, Sotiyo, Athanor oder Tatara eingelesen. Voraussetzung: Corp-Token in Corptools mit Strukturen und Corp-Assets.{% else %}Corptools ist nicht installiert – im Rechner können die Boni von Hand eingetragen werden.{% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+
 {% if q and not results %}
   <div class="alert alert-info">Nichts gefunden für „{{ q }}“. Mindestens 2 Zeichen eingeben.</div>
 {% endif %}

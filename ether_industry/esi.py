@@ -54,3 +54,21 @@ def iter_region_orders(region_id):
         yield from first.json()
         for page in range(2, pages + 1):
             yield from _get(session, url, params={"order_type": "all", "page": page}).json()
+
+
+def fetch_industry_systems():
+    """Liefert die Industrie-Kostenindizes aller Systeme (ein einziger Aufruf)."""
+    with _session() as session:
+        return _get(session, f"{ESI_BASE_URL}/industry/systems/").json()
+
+
+def fetch_type(type_id):
+    """Liefert die Typ-Daten eines Items inklusive Dogma-Attributen."""
+    with _session() as session:
+        return _get(session, f"{ESI_BASE_URL}/universe/types/{int(type_id)}/").json()
+
+
+def fetch_dogma_attribute(attribute_id):
+    """Liefert Name und Beschreibung eines Dogma-Attributs."""
+    with _session() as session:
+        return _get(session, f"{ESI_BASE_URL}/dogma/attributes/{int(attribute_id)}/").json()
